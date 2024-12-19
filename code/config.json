@@ -6,7 +6,7 @@
       "short_delay": [5, 10],
       "secondshort_delay": [40, 45],
       "long_delay": [75, 80],
-      "secondlong_delay": [120, 125],
+      "secondlong_delay": [110, 115],
       "burst_min": 2,
       "burst_max": 4
     }
@@ -15,8 +15,8 @@
     "parameters": {
       "short_delay": [5, 40],
       "secondshort_delay": [40, 75],
-      "long_delay": [75, 120],
-      "secondlong_delay": [120, 170],
+      "long_delay": [75, 110],
+      "secondlong_delay": [110, 160],
       "log_file_name": "Example_NTPTimingInterarrivalChannelReceiver.log"
     }
   }

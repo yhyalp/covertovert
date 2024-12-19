@@ -11,18 +11,13 @@ class MyCovertChannel(CovertChannelBase):
         super().__init__()
 
     def send(self, log_file_name, short_delay, secondshort_delay, long_delay, secondlong_delay, burst_min, burst_max):
-        """
-        - Generates a random binary message and sends it using NTP packets.
-        - '1' is represented by a short idle time (10–20ms).
-        - '0' is represented by a longer idle time (>20ms).
-        - Random burst sizes are used to avoid patterns.
-        """
+        beginning = time.time()
         # Ensure log_file_name is a valid string path
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a valid string path.")
 
         # Generate and log the random binary message
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name, 16, 16)
         print(f"Generated Binary Message: {binary_message}")
 
         i = 0
@@ -60,7 +55,7 @@ class MyCovertChannel(CovertChannelBase):
                 # Longest idle time for '11' (if you want to distinguish it)
                 self.sleep_random_time_ms(secondlong_delay[0], secondlong_delay[1])
 
-            print(i, bit_pair)  # Print the index and the 2-bit pair
+            #print(i, bit_pair)  # Print the index and the 2-bit pair
             i += 1
         
         burst_size = random.randint(burst_min, burst_max)
@@ -72,16 +67,15 @@ class MyCovertChannel(CovertChannelBase):
             ntp_packet = IP(dst="127.0.0.1") / UDP(dport=123)  # Simulated NTP packet
             super().send(ntp_packet)  # Send the packet using the method from CovertChannelBase
 
+        ending = time.time()
+
+        print("time:", ending-beginning)
         print("Message transmission completed.")
 
 
 
     def receive(self, short_delay, secondshort_delay, long_delay, secondlong_delay, log_file_name):
-        """
-        - Captures NTP packets and measures idle times between bursts to decode the binary message.
-        - Idle time < threshold → '1'
-        - Idle time >= threshold → '0'
-        """
+
         captured_binary = ""
         previous_time = None
 
@@ -113,29 +107,29 @@ class MyCovertChannel(CovertChannelBase):
                     # Now handle the idle time for 2-bit values:
                     if short_delay[0] <= idle_time <= short_delay[1]:
                         captured_binary += '00'  # Capture '00' for short idle time
-                        print(f"Idle time: {idle_time}ms", '00')
+                        #print(f"Idle time: {idle_time}ms", '00')
                         if maxIdleShort < idle_time:
                             maxIdleShort = idle_time
-                        print("maxIdleShort", maxIdleShort)
+                        #print("maxIdleShort", maxIdleShort)
                     elif secondshort_delay[0] <= idle_time < secondshort_delay[1]:
                         captured_binary += '01'  # Capture '01' for medium idle time
-                        print(f"Idle time: {idle_time}ms", '01')
+                        #print(f"Idle time: {idle_time}ms", '01')
                         if maxIdleSecondShort < idle_time:
                             maxIdleSecondShort = idle_time
-                        print("maxIdlesecondshort", maxIdleSecondShort)
+                        #print("maxIdlesecondshort", maxIdleSecondShort)
                     elif long_delay[0] <= idle_time <= long_delay[1]:
                         captured_binary += '10'  # Capture '10' for longer idle time
-                        print(f"Idle time: {idle_time}ms", '10')
+                        #print(f"Idle time: {idle_time}ms", '10')
                         if maxIdleLong < idle_time:
                             maxIdleLong = idle_time
-                        print("maxIdleLong", maxIdleLong)
+                        #print("maxIdleLong", maxIdleLong)
                     elif secondlong_delay[0] <= idle_time <= secondlong_delay[1]:
                         # This case can be adjusted based on your specific delay ranges
                         captured_binary += '11'  # Capture '11' for very long idle time
-                        print(f"Idle time: {idle_time}ms", '11')
+                        #print(f"Idle time: {idle_time}ms", '11')
                         if maxIdleLongest < idle_time:
                             maxIdleLongest = idle_time
-                        print("maxIdleLongest", maxIdleLongest)
+                        #print("maxIdleLongest", maxIdleLongest)
 
                 state = False
             
