@@ -17,7 +17,7 @@ class MyCovertChannel(CovertChannelBase):
             raise ValueError("log_file_name must be a valid string path.")
 
         # Generate and log the random binary message
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name, 16, 16)
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
         print(f"Generated Binary Message: {binary_message}")
 
         i = 0
@@ -29,16 +29,16 @@ class MyCovertChannel(CovertChannelBase):
             burst_size = random.randint(burst_min, burst_max)
 
             # Send the start marker packet
-            start_marker_packet = IP(dst="127.0.0.1") / UDP(dport=123) / Raw(b"START")
+            start_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"START")
             super().send(start_marker_packet)
 
             # Send a burst of NTP packets
             for _ in range(burst_size):
-                ntp_packet = IP(dst="127.0.0.1") / UDP(dport=123)  # Simulated NTP packet
+                ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
                 super().send(ntp_packet)  # Send the packet using the method from CovertChannelBase
             
             # Send the end marker packet
-            end_marker_packet = IP(dst="127.0.0.1") / UDP(dport=123) / Raw(b"END")  # Payload size = 128 bytes
+            end_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"END")  # Payload size = 128 bytes
             super().send(end_marker_packet)
 
             # Delay based on the 2-bit value
@@ -60,11 +60,11 @@ class MyCovertChannel(CovertChannelBase):
         
         burst_size = random.randint(burst_min, burst_max)
         
-        start_marker_packet = IP(dst="127.0.0.1") / UDP(dport=123) / Raw(b"START")
+        start_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"START")
         super().send(start_marker_packet)
         # Send a burst of NTP packets
         for _ in range(burst_size):
-            ntp_packet = IP(dst="127.0.0.1") / UDP(dport=123)  # Simulated NTP packet
+            ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
             super().send(ntp_packet)  # Send the packet using the method from CovertChannelBase
 
         ending = time.time()
@@ -143,7 +143,7 @@ class MyCovertChannel(CovertChannelBase):
                 state = True
 
         print("Listening for incoming NTP packets...")
-        sniff(filter="udp port 123", prn=packet_callback, iface="lo", timeout=60) # Sniff NTP packets for 30 seconds
+        sniff(filter="udp port 123", prn=packet_callback, iface="eth0", timeout=60) # Sniff NTP packets for 30 seconds
 
         # Stop when '.' is detected in the binary stream
         decoded_message = ""
