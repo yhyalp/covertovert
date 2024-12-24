@@ -83,8 +83,11 @@ class MyCovertChannel(CovertChannelBase):
         maxIdleSecondShort = 0.0
         maxIdleLong = 0.0
         maxIdleLongest = 0.0
-        total = 0.0
         state = True
+        should_stop_sniffing = False
+
+        def stop_sniff(packet):
+            return should_stop_sniffing  # Stop sniff if condition is met
 
         def packet_callback(packet):
             if Raw in packet:
@@ -93,7 +96,7 @@ class MyCovertChannel(CovertChannelBase):
                 payload = None
             
             nonlocal previous_time, captured_binary
-            nonlocal maxIdleLong, maxIdleShort, maxIdleSecondShort, maxIdleLongest, state
+            nonlocal maxIdleLong, maxIdleShort, maxIdleSecondShort, maxIdleLongest, state, should_stop_sniffing
 
             if payload == "START" and state == True:
                 # Capture packet timestamp
@@ -132,6 +135,11 @@ class MyCovertChannel(CovertChannelBase):
                         #print("maxIdleLongest", maxIdleLongest)
 
                 state = False
+                if len(captured_binary) % 8 == 0 and len(captured_binary) != 0:
+                    out = [(captured_binary[i:i+8]) for i in range(0, len(captured_binary), 8)]
+                    
+                    if out.pop() == self.convert_string_message_to_binary("."):
+                        should_stop_sniffing = True
             
             elif payload == "END" and state == False:
                 # Capture packet timestamp
@@ -143,7 +151,7 @@ class MyCovertChannel(CovertChannelBase):
                 state = True
 
         print("Listening for incoming NTP packets...")
-        sniff(filter="udp port 123", prn=packet_callback, iface="eth0", timeout=60) # Sniff NTP packets for 30 seconds
+        sniff(filter="udp port 123", prn=packet_callback, stop_filter=stop_sniff, iface="eth0", timeout=150) # Sniff NTP packets for 30 seconds
 
         # Stop when '.' is detected in the binary stream
         decoded_message = ""
