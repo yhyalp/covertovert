@@ -3,20 +3,20 @@
   "send": {
     "parameters": {
       "log_file_name": "Example_NTPTimingInterarrivalChannelSender.log",
-      "short_delay": [5, 10],
-      "secondshort_delay": [40, 45],
-      "long_delay": [75, 80],
-      "secondlong_delay": [110, 115],
+      "short_delay": [25, 50],
+      "secondshort_delay": [200, 225],
+      "long_delay": [375, 400],
+      "secondlong_delay": [550, 575],
       "burst_min": 2,
       "burst_max": 4
     }
   },
   "receive": {
     "parameters": {
-      "short_delay": [5, 40],
-      "secondshort_delay": [40, 75],
-      "long_delay": [75, 110],
-      "secondlong_delay": [110, 160],
+      "short_delay": [25, 200],
+      "secondshort_delay": [200, 375],
+      "long_delay": [375, 575],
+      "secondlong_delay": [575, 800],
       "log_file_name": "Example_NTPTimingInterarrivalChannelReceiver.log"
     }
   }
