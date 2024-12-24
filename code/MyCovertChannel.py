@@ -11,20 +11,53 @@ class MyCovertChannel(CovertChannelBase):
         super().__init__()
 
     def send(self, log_file_name, short_delay, secondshort_delay, long_delay, secondlong_delay, burst_min, burst_max):
+        lastTwo = ""
+        
+        def binAdd(x, y):
+            maxlen = max(len(x), len(y))
+
+            #Normalize lengths
+            x = x.zfill(maxlen)
+            y = y.zfill(maxlen)
+
+            result = ''
+            carry = 0
+
+            for i in range(maxlen-1, -1, -1):
+                r = carry
+                r += 1 if x[i] == '1' else 0
+                r += 1 if y[i] == '1' else 0
+
+                # r can be 0,1,2,3 (carry + x[i] + y[i])
+                # and among these, for r==1 and r==3 you will have result bit = 1
+                # for r==2 and r==3 you will have carry = 1
+
+                result = ('1' if r % 2 == 1 else '0') + result
+                carry = 0 if r < 2 else 1       
+
+            if carry !=0 : result = '1' + result
+
+            return result.zfill(maxlen)
+        
         beginning = time.time()
         # Ensure log_file_name is a valid string path
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a valid string path.")
 
         # Generate and log the random binary message
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name, 16, 16)
         print(f"Generated Binary Message: {binary_message}")
 
         i = 0
         for j in range(0, len(binary_message), 2):
             # Get the 2-bit value
             bit_pair = binary_message[j:j+2]
-            
+
+            if j!=0:
+                bit_pair = binAdd(binary_message[j:j+2], bin(4-int(binary_message[j-2:j], 2)))
+                length = len(bit_pair)
+                bit_pair = bit_pair[length-2:]
+
             # Random burst size
             burst_size = random.randint(burst_min, burst_max)
 
@@ -86,6 +119,32 @@ class MyCovertChannel(CovertChannelBase):
         total = 0.0
         state = True
 
+        def binAdd(x, y):
+            maxlen = max(len(x), len(y))
+
+            #Normalize lengths
+            x = x.zfill(maxlen)
+            y = y.zfill(maxlen)
+
+            result = ''
+            carry = 0
+
+            for i in range(maxlen-1, -1, -1):
+                r = carry
+                r += 1 if x[i] == '1' else 0
+                r += 1 if y[i] == '1' else 0
+
+                # r can be 0,1,2,3 (carry + x[i] + y[i])
+                # and among these, for r==1 and r==3 you will have result bit = 1
+                # for r==2 and r==3 you will have carry = 1
+
+                result = ('1' if r % 2 == 1 else '0') + result
+                carry = 0 if r < 2 else 1       
+
+            if carry !=0 : result = '1' + result
+
+            return result.zfill(maxlen)
+
         def packet_callback(packet):
             if Raw in packet:
                 payload = packet[Raw].load.decode("utf-8", errors="ignore")
@@ -106,30 +165,39 @@ class MyCovertChannel(CovertChannelBase):
 
                     # Now handle the idle time for 2-bit values:
                     if short_delay[0] <= idle_time <= short_delay[1]:
-                        captured_binary += '00'  # Capture '00' for short idle time
+                        value = binAdd('00', captured_binary[len(captured_binary)-2:]) 
+                        value = value[len(value)-2:]
+                        captured_binary += value  # Capture '00' for short idle time
                         #print(f"Idle time: {idle_time}ms", '00')
                         if maxIdleShort < idle_time:
                             maxIdleShort = idle_time
                         #print("maxIdleShort", maxIdleShort)
                     elif secondshort_delay[0] <= idle_time < secondshort_delay[1]:
-                        captured_binary += '01'  # Capture '01' for medium idle time
+                        value = binAdd('01', captured_binary[len(captured_binary)-2:]) 
+                        value = value[len(value)-2:]
+                        captured_binary += value
                         #print(f"Idle time: {idle_time}ms", '01')
                         if maxIdleSecondShort < idle_time:
                             maxIdleSecondShort = idle_time
                         #print("maxIdlesecondshort", maxIdleSecondShort)
                     elif long_delay[0] <= idle_time <= long_delay[1]:
-                        captured_binary += '10'  # Capture '10' for longer idle time
+                        value = binAdd('10', captured_binary[len(captured_binary)-2:]) 
+                        value = value[len(value)-2:]
+                        captured_binary += value
                         #print(f"Idle time: {idle_time}ms", '10')
                         if maxIdleLong < idle_time:
                             maxIdleLong = idle_time
                         #print("maxIdleLong", maxIdleLong)
                     elif secondlong_delay[0] <= idle_time <= secondlong_delay[1]:
                         # This case can be adjusted based on your specific delay ranges
-                        captured_binary += '11'  # Capture '11' for very long idle time
+                        value = binAdd('11', captured_binary[len(captured_binary)-2:]) 
+                        value = value[len(value)-2:]
+                        captured_binary += value
                         #print(f"Idle time: {idle_time}ms", '11')
                         if maxIdleLongest < idle_time:
                             maxIdleLongest = idle_time
                         #print("maxIdleLongest", maxIdleLongest)
+                    print(value)
 
                 state = False
             
@@ -143,7 +211,7 @@ class MyCovertChannel(CovertChannelBase):
                 state = True
 
         print("Listening for incoming NTP packets...")
-        sniff(filter="udp port 123", prn=packet_callback, iface="eth0", timeout=60) # Sniff NTP packets for 30 seconds
+        sniff(filter="udp port 123", prn=packet_callback, iface="eth0", timeout=100) # Sniff NTP packets for 30 seconds
 
         # Stop when '.' is detected in the binary stream
         decoded_message = ""
