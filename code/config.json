@@ -3,20 +3,20 @@
   "send": {
     "parameters": {
       "log_file_name": "Example_NTPTimingPacketBurstsSender.log",
-      "short_delay": [50, 51],
-      "secondshort_delay": [150, 151],
-      "long_delay": [250, 251],
-      "secondlong_delay": [350, 351],
+      "short_delay": [200, 201],
+      "secondshort_delay": [400, 401],
+      "long_delay": [600, 601],
+      "secondlong_delay": [800, 801],
       "burst_min": 2,
       "burst_max": 4
     }
   },
   "receive": {
     "parameters": {
-      "short_delay": [50, 150],
-      "secondshort_delay": [150, 250],
-      "long_delay": [250, 350],
-      "secondlong_delay": [350, 500],
+      "short_delay": [200, 400],
+      "secondshort_delay": [400, 600],
+      "long_delay": [600, 800],
+      "secondlong_delay": [800, 1000],
       "log_file_name": "Example_NTPTimingPacketBurstsReceiver.log"
     }
   }
