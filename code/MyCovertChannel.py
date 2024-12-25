@@ -17,7 +17,7 @@ class MyCovertChannel(CovertChannelBase):
             raise ValueError("log_file_name must be a valid string path.")
 
         # Generate and log the random binary message
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name, 16, 16)
         print(f"Generated Binary Message: {binary_message}")
 
         i = 0
@@ -28,18 +28,10 @@ class MyCovertChannel(CovertChannelBase):
             # Random burst size
             burst_size = random.randint(burst_min, burst_max)
 
-            # Send the start marker packet
-            start_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"START")
-            super().send(start_marker_packet)
-
             # Send a burst of NTP packets
             for _ in range(burst_size):
                 ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
                 super().send(ntp_packet)  # Send the packet using the method from CovertChannelBase
-            
-            # Send the end marker packet
-            end_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"END")  # Payload size = 128 bytes
-            super().send(end_marker_packet)
 
             # Delay based on the 2-bit value
             if bit_pair == '00':
@@ -60,8 +52,6 @@ class MyCovertChannel(CovertChannelBase):
         
         burst_size = random.randint(burst_min, burst_max)
         
-        start_marker_packet = IP(dst="172.18.0.3") / UDP(dport=123) / Raw(b"START")
-        super().send(start_marker_packet)
         # Send a burst of NTP packets
         for _ in range(burst_size):
             ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
@@ -90,65 +80,51 @@ class MyCovertChannel(CovertChannelBase):
             return should_stop_sniffing  # Stop sniff if condition is met
 
         def packet_callback(packet):
-            if Raw in packet:
-                payload = packet[Raw].load.decode("utf-8", errors="ignore")
-            else:
-                payload = None
-            
             nonlocal previous_time, captured_binary
             nonlocal maxIdleLong, maxIdleShort, maxIdleSecondShort, maxIdleLongest, state, should_stop_sniffing
 
-            if payload == "START" and state == True:
-                # Capture packet timestamp
-                current_time = time.time()
+            # Capture packet timestamp
+            current_time = time.time()
 
-                # Measure idle time
-                if previous_time is not None:
-                    idle_time = (current_time - previous_time) * 1000  # Convert to milliseconds
-                    #print(f"Idle time: {idle_time}ms")  # Print idle time to debug
+            # Measure idle time
+            if previous_time is not None:
+                idle_time = (current_time - previous_time) * 1000  # Convert to milliseconds
+                #print(f"Idle time: {idle_time}ms")  # Print idle time to debug
 
-                    # Now handle the idle time for 2-bit values:
-                    if short_delay[0] <= idle_time <= short_delay[1]:
-                        captured_binary += '00'  # Capture '00' for short idle time
-                        #print(f"Idle time: {idle_time}ms", '00')
-                        if maxIdleShort < idle_time:
-                            maxIdleShort = idle_time
-                        #print("maxIdleShort", maxIdleShort)
-                    elif secondshort_delay[0] <= idle_time < secondshort_delay[1]:
-                        captured_binary += '01'  # Capture '01' for medium idle time
-                        #print(f"Idle time: {idle_time}ms", '01')
-                        if maxIdleSecondShort < idle_time:
-                            maxIdleSecondShort = idle_time
-                        #print("maxIdlesecondshort", maxIdleSecondShort)
-                    elif long_delay[0] <= idle_time <= long_delay[1]:
-                        captured_binary += '10'  # Capture '10' for longer idle time
-                        #print(f"Idle time: {idle_time}ms", '10')
-                        if maxIdleLong < idle_time:
-                            maxIdleLong = idle_time
-                        #print("maxIdleLong", maxIdleLong)
-                    elif secondlong_delay[0] <= idle_time <= secondlong_delay[1]:
-                        # This case can be adjusted based on your specific delay ranges
-                        captured_binary += '11'  # Capture '11' for very long idle time
-                        #print(f"Idle time: {idle_time}ms", '11')
-                        if maxIdleLongest < idle_time:
-                            maxIdleLongest = idle_time
-                        #print("maxIdleLongest", maxIdleLongest)
+                # Now handle the idle time for 2-bit values:
+                if short_delay[0] <= idle_time <= short_delay[1]:
+                    captured_binary += '00'  # Capture '00' for short idle time
+                    #print(f"Idle time: {idle_time}ms", '00')
+                    if maxIdleShort < idle_time:
+                        maxIdleShort = idle_time
+                    #print("maxIdleShort", maxIdleShort)
+                elif secondshort_delay[0] <= idle_time < secondshort_delay[1]:
+                    captured_binary += '01'  # Capture '01' for medium idle time
+                    #print(f"Idle time: {idle_time}ms", '01')
+                    if maxIdleSecondShort < idle_time:
+                        maxIdleSecondShort = idle_time
+                    #print("maxIdlesecondshort", maxIdleSecondShort)
+                elif long_delay[0] <= idle_time <= long_delay[1]:
+                    captured_binary += '10'  # Capture '10' for longer idle time
+                    #print(f"Idle time: {idle_time}ms", '10')
+                    if maxIdleLong < idle_time:
+                        maxIdleLong = idle_time
+                    #print("maxIdleLong", maxIdleLong)
+                elif secondlong_delay[0] <= idle_time <= secondlong_delay[1]:
+                    # This case can be adjusted based on your specific delay ranges
+                    captured_binary += '11'  # Capture '11' for very long idle time
+                    #print(f"Idle time: {idle_time}ms", '11')
+                    if maxIdleLongest < idle_time:
+                        maxIdleLongest = idle_time
+                    #print("maxIdleLongest", maxIdleLongest)
 
-                state = False
-                if len(captured_binary) % 8 == 0 and len(captured_binary) != 0:
-                    out = [(captured_binary[i:i+8]) for i in range(0, len(captured_binary), 8)]
-                    
-                    if out.pop() == self.convert_string_message_to_binary("."):
-                        should_stop_sniffing = True
+            if len(captured_binary) % 8 == 0 and len(captured_binary) != 0:
+                out = [(captured_binary[i:i+8]) for i in range(0, len(captured_binary), 8)]
+                
+                if out.pop() == self.convert_string_message_to_binary("."):
+                    should_stop_sniffing = True
             
-            elif payload == "END" and state == False:
-                # Capture packet timestamp
-                current_time = time.time()
-
-                # Update previous_time
-                previous_time = current_time
-
-                state = True
+            previous_time = current_time
 
         print("Listening for incoming NTP packets...")
         sniff(filter="udp port 123", prn=packet_callback, stop_filter=stop_sniff, iface="eth0", timeout=150) # Sniff NTP packets for 30 seconds
