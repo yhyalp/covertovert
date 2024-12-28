@@ -10,7 +10,7 @@ class MyCovertChannel(CovertChannelBase):
     def __init__(self):
         super().__init__()
 
-    def send(self, log_file_name, short_delay, secondshort_delay, long_delay, secondlong_delay, burst_min, burst_max):
+    def send(self, log_file_name, short_delay, secondshort_delay, long_delay, secondlong_delay, burst_min, burst_max, destination_ip):
         """
         We recommend that the following parameters for the sender should meet or exceed the specified minimum values, and the intervals should remain narrow to ensure accurate transmission:
 
@@ -35,7 +35,7 @@ class MyCovertChannel(CovertChannelBase):
             burst_size = random.randint(burst_min, burst_max) # burst_size selection
             
             for _ in range(burst_size):
-                ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
+                ntp_packet = IP(dst=destination_ip) / UDP(dport=123)  # Simulated NTP packet
                 super().send(ntp_packet)
                 
             # Delay based on the 2-bit value
@@ -58,7 +58,7 @@ class MyCovertChannel(CovertChannelBase):
         
         # Sending a burst of NTP packets
         for _ in range(burst_size):
-            ntp_packet = IP(dst="172.18.0.3") / UDP(dport=123)  # Simulated NTP packet
+            ntp_packet = IP(dst=destination_ip) / UDP(dport=123)  # Simulated NTP packet
             super().send(ntp_packet) 
 
         ending = time.time()

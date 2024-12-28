@@ -8,7 +8,8 @@
       "long_delay": [600, 601],
       "secondlong_delay": [800, 801],
       "burst_min": 2,
-      "burst_max": 5
+      "burst_max": 5,
+      "destination_ip": "172.18.0.3"
     }
   },
   "receive": {

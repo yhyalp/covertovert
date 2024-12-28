@@ -64,6 +64,8 @@ File name to log the transmitted binary message.
 Ranges of delays (in milliseconds) corresponding to 00, 01, 10, and 11 bit pairs.
 ### 3. burst_min, burst_max: 
 Minimum and maximum burst sizes for packet transmission. A random burst size is chosen between these values for each burst.
+### 4. destination_ip:
+IP address of the receiver.
 
 ## Receiver Parameters:
 ### 1. short_delay, secondshort_delay, long_delay, secondlong_delay: 
